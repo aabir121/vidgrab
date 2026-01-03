@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
       if (message.videos && message.videos.length > 0) {
         allVideos = message.videos.map((video, index) => ({ ...video, id: `video-${index}` }));
+        const uniqueExtensions = getUniqueExtensions(allVideos);
+        populateExtensionFilter(uniqueExtensions);
         displayVideos(allVideos);
         filtersDiv.classList.remove('hidden');
         videoListContainer.classList.remove('hidden');
@@ -141,6 +143,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     updateSelectAllCheckbox();
     updateDownloadButtonState();
+  }
+
+  function getUniqueExtensions(videos) {
+    const extensions = new Set();
+    videos.forEach(video => {
+      if (video.extension) {
+        extensions.add(video.extension);
+      }
+    });
+    return Array.from(extensions).sort();
+  }
+
+  function populateExtensionFilter(extensions) {
+    extensionFilter.innerHTML = '<option value="all">All</option>'; // Always have 'All' option
+    if (extensions.length > 1) {
+      extensions.forEach(ext => {
+        const option = document.createElement('option');
+        option.value = ext;
+        option.textContent = `.${ext}`;
+        extensionFilter.appendChild(option);
+      });
+      extensionFilter.closest('.filter-group').classList.remove('hidden');
+    } else {
+      extensionFilter.closest('.filter-group').classList.add('hidden');
+    }
   }
 
   function applyFilters() {
