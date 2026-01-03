@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VidGrab - Video Link Downloader</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1><i class="fa-solid fa-video" aria-hidden="true"></i> VidGrab - Video Link Downloader</h1>
+    <div class="tagline">Quickly save videos to a folder in your Downloads</div>
+    <div class="input-group">
+      <label for="url-input">Page URL:</label>
+      <input type="text" id="url-input" readonly>
+      <button id="scan-button">Scan Page</button>
+    </div>
+    <div id="loading-indicator" class="hidden">
+      Loading...
+    </div>
+    <div id="error-message" class="hidden error"></div>
+    <div id="filters" class="hidden">
+      <div class="filter-group">
+        <label for="filename-filter">Filename:</label>
+        <input type="text" id="filename-filter" placeholder="Filter by filename">
+      </div>
+      <div class="filter-group">
+        <label for="extension-filter">Extension:</label>
+        <select id="extension-filter">
+          <option value="all">All</option>
+          <option value="mp4">.mp4</option>
+          <option value="mkv">.mkv</option>
+          <option value="webm">.webm</option>
+          <option value="mov">.mov</option>
+          <option value="avi">.avi</option>
+          <option value="flv">.flv</option>
+        </select>
+      </div>
+    </div>
+    <div id="video-list-container" class="hidden">
+      <div class="select-all-group">
+        <input type="checkbox" id="select-all">
+        <label for="select-all">Select All</label>
+      </div>
+      <ul id="video-list"></ul>
+    </div>
+
+    <div id="destination-settings" class="settings">
+      <label for="dest-folder-input">Destination folder (relative to Downloads):</label>
+      <input type="text" id="dest-folder-input" placeholder="e.g., MyVideos/Movies">
+      <div class="dest-save-row">
+        <button id="save-dest-button">Save</button>
+        <span id="save-feedback" class="save-feedback" aria-hidden="true"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+      </div>
+      <div class="note small" id="current-dest"></div>
+      <div class="settings-inline">
+        <input type="checkbox" id="ask-folder-checkbox">
+        <label for="ask-folder-checkbox">Ask for folder before download (stores as default)</label>
+      </div>
+    </div>
+
+    <button id="download-button" class="hidden">Download Selected</button>
+  </div> 
+  <script src="popup.js"></script>
+</body>
+</html>

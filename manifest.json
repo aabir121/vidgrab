@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "VidGrab - Video Link Downloader",
+  "version": "1.0",
+  "description": "Extracts downloadable video links from webpages, lets users filter and select them, and saves downloads to a chosen subfolder of the browser's Downloads directory.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
