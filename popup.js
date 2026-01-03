@@ -10,47 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectAllCheckbox = document.getElementById('select-all');
   const filenameFilter = document.getElementById('filename-filter');
   const extensionFilter = document.getElementById('extension-filter');
-  const destFolderInput = document.getElementById('dest-folder-input');
-  const saveDestButton = document.getElementById('save-dest-button');
-  const saveFeedback = document.getElementById('save-feedback');
-  const currentDestDiv = document.getElementById('current-dest');
-  const askFolderCheckbox = document.getElementById('ask-folder-checkbox');
 
   let allVideos = [];
   let displayedVideos = [];
 
-  // Load saved destination settings
-  chrome.storage.sync.get(['destinationFolder', 'askFolderBeforeDownload'], (data) => {
-    if (data?.destinationFolder) {
-      destFolderInput.value = data.destinationFolder;
-      currentDestDiv.textContent = `Current default: ${data.destinationFolder}`;
-    } else {
-      currentDestDiv.textContent = 'No default folder set';
-    }
 
-    if (data?.askFolderBeforeDownload) {
-      askFolderCheckbox.checked = true;
-    }
-  });
 
-  saveDestButton.addEventListener('click', () => {
-    const folder = (destFolderInput.value || '').trim().replace(/(^\/+|\/+\$)/g, '');
-    chrome.storage.sync.set({ destinationFolder: folder }, () => {
-      currentDestDiv.textContent = folder ? `Current default: ${folder}` : 'No default folder set';
 
-      // Micro-interaction: show a quick saved confirmation
-      saveDestButton.classList.add('saved');
-      saveFeedback.classList.add('visible');
-      setTimeout(() => {
-        saveDestButton.classList.remove('saved');
-        saveFeedback.classList.remove('visible');
-      }, 1400);
-    });
-  });
 
-  askFolderCheckbox.addEventListener('change', (e) => {
-    chrome.storage.sync.set({ askFolderBeforeDownload: e.target.checked });
-  });
+
 
   // Get current tab URL and pre-fill input
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -133,26 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Determine destination folder
-    const askForFolder = askFolderCheckbox.checked;
-    let destinationFolder = (destFolderInput.value || '').trim().replace(/(^\/+|\/+\$)/g, '');
-
-    if (askForFolder) {
-      const userFolder = globalThis.prompt('Enter destination folder (relative to Downloads):', destinationFolder || '');
-      if (userFolder === null) {
-        // User cancelled prompt
-        return;
-      }
-      const sanitized = (userFolder || '').trim().replace(/(^\/+|\/+$)/g, '');
-      destinationFolder = sanitized;
-      // Save as new default
-      chrome.storage.sync.set({ destinationFolder: sanitized }, () => {
-        destFolderInput.value = sanitized;
-        currentDestDiv.textContent = sanitized ? `Current default: ${sanitized}` : 'No default folder set';
-      });
-    }
-
-    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selectedItems, destinationFolder: destinationFolder });
+    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selectedItems });
   });
 
   function displayVideos(videos) {

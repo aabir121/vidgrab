@@ -1,12 +1,6 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'downloadVideos') {
     const items = message.items || [];
-    const destinationFolder = (message.destinationFolder || '').replace(/(^\/+|\/+\$)/g, '');
-
-    function sanitizeFolder(folder) {
-      if (!folder) return '';
-      return folder.replace(/(^\/+|\/+\$)/g, '');
-    }
 
     if (Array.isArray(items) && items.length > 0) {
       items.forEach(item => {
@@ -21,8 +15,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         }
 
-        const folderPrefix = sanitizeFolder(destinationFolder);
-        const downloadFilename = folderPrefix ? `${folderPrefix}/${fileName}` : fileName;
+        const downloadFilename = fileName;
 
         chrome.downloads.download({
           url: item.url,
