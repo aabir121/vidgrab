@@ -3,8 +3,8 @@ body {
   font-family: 'Inter', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  width: 720px;
-  padding: 12px;
+  width: 420px;
+  padding: 20px;
   background: linear-gradient(180deg, #f6fbff 0%, #f4f7fb 100%);
   color: #1f2933;
   margin: 0;
@@ -18,9 +18,9 @@ body {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   /* no fixed height so popup sizes to content before scanning */
-  max-height: 95vh;
+  max-height: 93vh;
 }
 
 h1 {
@@ -39,7 +39,7 @@ h1 i {
 }
 
 .tagline {
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   color: #475569;
   text-align: center;
   font-weight: 500;
@@ -109,13 +109,17 @@ button:disabled {
 }
 
 #filters {
-  display: flex;
+  display: none; /* hidden by default */
   flex-direction: column;
   gap: 10px;
   padding: 10px;
   border-radius: 10px;
   background-color: #ffffff;
   box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+}
+
+#filters:not(.hidden) {
+  display: flex;
 }
 
 .filter-group {
@@ -140,13 +144,18 @@ button:disabled {
 }
 
 #video-list-container {
-  padding: 0 10px 10px 10px;
+  padding: 0 10px 6px 10px;
   border-radius: 12px;
   background-color: #ffffff;
   box-shadow: 0 1px 4px rgba(16,24,40,0.04);
   flex: 1 1 auto; /* take remaining space */
-  min-height: 80px;
+  min-height: 0; /* do not leave empty space when hidden */
   overflow-y: auto; /* only this scrolls */
+  display: none; /* hidden by default to avoid empty box on load; JS will remove when needed */
+}
+
+#video-list-container:not(.hidden) {
+  display: block; /* show when not hidden */
 }
 
 .select-all-group {
@@ -228,15 +237,19 @@ button:disabled {
 }
 
 .footer {
-  display: flex;
+  display: none; /* hidden by default to avoid extra space */
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 10px 0 4px 0;
   flex-shrink: 0;
   border-top: 1px solid rgba(15,23,42,0.03);
   background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
   backdrop-filter: blur(4px);
+}
+
+.footer:not(.hidden) {
+  display: flex;
 }
 
 .auto-download-group {

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const extensionFilter = document.getElementById('extension-filter');
   const autoDownloadCheckbox = document.getElementById('auto-download');
   const autoDownloadGroup = document.getElementById('auto-download-group');
+  const footer = document.querySelector('.footer');
 
   let allVideos = [];
   let displayedVideos = [];
@@ -71,9 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         videoListContainer.classList.remove('hidden');
         autoDownloadGroup.classList.remove('hidden');
         downloadButton.classList.remove('hidden');
+        footer.classList.remove('hidden');
         downloadButton.disabled = true;
       } else {
         displayError('No downloadable video files found on this page.');
+        footer.classList.add('hidden');
       }
     } else if (message.action === 'error') {
       hideLoading();
@@ -116,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
       videoList.innerHTML = '<li>No videos match your filter criteria.</li>';
       autoDownloadGroup.classList.add('hidden');
       downloadButton.disabled = true;
+      footer.classList.add('hidden');
       return;
     }
     displayedVideos = videos;
@@ -246,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filtersDiv.classList.add('hidden');
     videoListContainer.classList.add('hidden');
     downloadButton.classList.add('hidden');
+    footer.classList.add('hidden');
   }
 
   function hideLoading() {
@@ -267,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadButton.classList.add('hidden');
     downloadButton.disabled = true;
     autoDownloadGroup.classList.add('hidden');
+    footer.classList.add('hidden');
     selectAllCheckbox.checked = false;
     filenameFilter.value = '';
     extensionFilter.value = 'all';
