@@ -1,153 +1,99 @@
-/* =========================================================
-   Base popup setup
-   ========================================================= */
-
-html, body {
-  width: 560px;
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(180deg, #f6fbff 0%, #f4f7fb 100%);
-  color: #1f2933;
-  -webkit-font-smoothing: antialiased;
-}
-
+/* Fonts & Body */
 body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5; /* soft gray */
+  color: #1e1e2f;
+  width: 420px;
   padding: 0;
-  overflow: visible;
-}
-
-/* =========================================================
-   Card polish (Bootstrap extension)
-   ========================================================= */
-
-.card {
-  border-radius: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-}
-
-.card-body {
-  padding: 16px;
-}
-
-/* =========================================================
-   Loading & error states
-   ========================================================= */
-
-#loading-indicator {
-  font-size: 0.9rem;
-}
-
-#error-message {
-  font-size: 0.85rem;
-  margin-bottom: 12px;
-}
-
-/* =========================================================
-   Filters
-   ========================================================= */
-
-#filters {
-  margin-bottom: 12px;
-}
-
-/* =========================================================
-   Video list container
-   ========================================================= */
-
-#video-list-container {
-  margin-top: 4px;
-}
-
-#video-list {
   margin: 0;
-  padding: 0;
 }
 
-/* Scroll area already set inline in HTML */
-
-/* =========================================================
-   Select all (sticky header inside list)
-   ========================================================= */
-
-.select-all-group {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: #ffffff;
-  padding: 6px 8px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+/* Header */
+h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  color: #111827;
+}
+h1 i {
+  color: #2563eb;
+  margin-right: 6px;
+}
+.tagline {
+  font-size: 0.85rem;
+  text-align: center;
+  color: #4b5563;
 }
 
-/* =========================================================
-   Video list items
-   ========================================================= */
+/* Filters & Lists */
+#filters input, #filters select {
+  flex-grow: 1;
+}
 
-#video-list li {
-  border: none;
-  padding: 10px 8px;
+#video-list-container li {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  background-color: #ffffff;
+}
+#video-list-container li:hover {
+  background-color: rgba(37,99,235,0.05);
 }
 
-#video-list li:hover {
-  background-color: rgba(14, 165, 164, 0.05);
+.filename {
+  font-weight: 500;
+  color: #1e1e2f;
 }
 
-#video-list li label {
+/* Badges */
+.extension {
+  background: #7c3aed;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.file-size {
+  background: #14b8a6;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Footer */
+.footer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  margin: 0;
+  justify-content: space-between;
 }
 
-/* Filename emphasis */
-.filename {
-  font-weight: 600;
-  color: #0b1220;
+/* Hidden Elements */
+.d-none {
+  display: none !important;
 }
 
-/* =========================================================
-   Badges
-   ========================================================= */
-
-.extension,
-.file-size {
-  font-size: 0.7rem;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.extension {
-  background: linear-gradient(90deg, #6366f1, #7c3aed);
-}
-
-.file-size {
-  background: linear-gradient(90deg, #06b6d4, #0ea5a4);
-}
-
-/* =========================================================
-   Footer
-   ========================================================= */
-
-.footer {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
-}
-
-/* =========================================================
-   Scrollbar (single scroll area)
-   ========================================================= */
-
+/* Scrollbar for video list */
 #video-list-container::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+}
+#video-list-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.15);
+  border-radius: 4px;
 }
 
-#video-list-container::-webkit-scrollbar-thumb {
-  background-color: rgba(15, 23, 42, 0.15);
-  border-radius: 8px;
+/* Compact input / button adjustments */
+.form-control-sm {
+  height: 32px;
+  font-size: 0.85rem;
+}
+.btn-sm {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
 }

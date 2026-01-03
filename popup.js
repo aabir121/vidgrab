@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // ======== DOM ELEMENTS ========
   const urlInput = document.getElementById('url-input');
   const scanButton = document.getElementById('scan-button');
   const loadingIndicator = document.getElementById('loading-indicator');
@@ -15,279 +14,241 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoDownloadGroup = document.getElementById('auto-download-group');
   const footer = document.querySelector('.footer');
 
-  // ======== STATE ========
   let allVideos = [];
   let displayedVideos = [];
 
-  // ======== UTILITY HELPERS ========
-  const show = el => el && el.classList.remove('d-none');
-  const hide = el => el && el.classList.add('d-none');
-
-  const safeDecodeName = name => {
-    if (!name) return '';
-    try { return decodeURIComponent(name.replace(/\+/g, ' ')); } 
-    catch { return name.replace(/\+/g, ' '); }
-  };
-
-  const escapeHtml = str => {
-    if (!str) return '';
-    return String(str).replace(/[&<>"']/g, c => ({
-      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-    })[c]);
-  };
-
-  const formatBytes = bytes => {
-    if (bytes == null) return 'Unknown';
-    if (bytes === 0) return '0 B';
-    const units = ['B','KB','MB','GB','TB'];
-    let u = 0, val = bytes;
-    while (val >= 1024 && u < units.length - 1) { val /= 1024; u++; }
-    return (u === 0 ? val : val.toFixed(1).replace('.0','')) + ' ' + units[u];
-  };
-
-  // ======== INITIAL TAB URL ========
-  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+  // Pre-fill URL input
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]?.url) urlInput.value = tabs[0].url;
   });
 
-  // ======== SCAN BUTTON ========
+  // Scan button
   scanButton.addEventListener('click', () => {
     const url = urlInput.value;
-    if (!url) return displayError('Please enter a URL.');
-
+    if (!url) {
+      showError('Please enter a URL.');
+      return;
+    }
     clearResults();
     showLoading();
-    scanButton.disabled = true;
 
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;
-      if (!tabId) return displayError('No active tab found.');
+      if (!tabId) return showError('No active tab found.');
 
       chrome.scripting.executeScript(
         { target: { tabId }, files: ['content.js'] },
         () => {
-          if (chrome.runtime.lastError) displayError('Error injecting content script: ' + chrome.runtime.lastError.message);
-          else chrome.tabs.sendMessage(tabId, { action: 'scanPage' });
+          if (chrome.runtime.lastError) {
+            showError('Error injecting content script: ' + chrome.runtime.lastError.message);
+            hideLoading();
+          } else {
+            chrome.tabs.sendMessage(tabId, { action: 'scanPage' });
+          }
         }
       );
     });
   });
 
-  // ======== RECEIVE CONTENT SCRIPT ========
+  // Listen to messages from content.js
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'displayVideos') {
       hideLoading();
-      scanButton.disabled = false;
-
-      if (!message.videos?.length) {
-        displayError('No downloadable video files found on this page.');
-        hide(footer);
-        return;
+      if (message.videos?.length > 0) {
+        allVideos = message.videos.map((v, i) => ({ ...v, id: `video-${i}` }));
+        populateExtensionFilter(getUniqueExtensions(allVideos));
+        displayVideos(allVideos);
+        filtersDiv.classList.remove('d-none');
+        videoListContainer.classList.remove('d-none');
+        autoDownloadGroup.classList.remove('d-none');
+        downloadButton.classList.remove('d-none');
+        footer.classList.remove('d-none');
+        downloadButton.disabled = true;
+      } else {
+        showError('No downloadable video files found.');
+        footer.classList.add('d-none');
       }
-
-      allVideos = message.videos.map((v, idx) => ({ ...v, id: `video-${idx}` }));
-      const extensions = Array.from(new Set(allVideos.filter(v => v.extension).map(v => v.extension))).sort();
-      populateExtensionFilter(extensions);
-
-      displayVideos(allVideos);
-      show(filtersDiv);
-      show(videoListContainer);
-      show(autoDownloadGroup);
-      show(downloadButton);
-      show(footer);
-      downloadButton.disabled = true;
-    }
-
-    if (message.action === 'error') {
+    } else if (message.action === 'error') {
       hideLoading();
-      scanButton.disabled = false;
-      displayError(message.message);
+      showError(message.message);
     }
   });
 
-  // ======== SELECT ALL ========
-  selectAllCheckbox.addEventListener('change', e => {
-    const checked = e.target.checked;
-    displayedVideos.forEach(video => {
-      const cb = document.getElementById(video.id);
-      if (cb) cb.checked = checked;
-    });
-    updateDownloadButtonState();
-  });
-
-  // ======== FILTERS ========
+  // Filters
   filenameFilter.addEventListener('input', applyFilters);
   extensionFilter.addEventListener('change', applyFilters);
 
-  function applyFilters() {
-    const fnameQuery = filenameFilter.value.toLowerCase();
-    const extQuery = extensionFilter.value;
+  // Select All
+  selectAllCheckbox.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    videoList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = checked);
+    updateDownloadButton();
+  });
 
-    const filtered = allVideos.filter(v => {
-      const name = (v.fileName || '').toLowerCase();
-      return name.includes(fnameQuery) && (extQuery === 'all' || v.extension === extQuery);
+  // Download button
+  downloadButton.addEventListener('click', () => {
+    const selectedVideos = Array.from(videoList.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb => displayedVideos.find(v => v.id === cb.dataset.id))
+      .filter(Boolean)
+      .map(v => ({ url: v.url, fileName: v.fileName }));
+
+    if (!selectedVideos.length) return showError('Select at least one video.');
+
+    const saveAs = !autoDownloadCheckbox.checked;
+    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selectedVideos, saveAs });
+  });
+
+  // Video list checkbox listener
+  videoList.addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') {
+      updateSelectAllCheckbox();
+      updateDownloadButton();
+    }
+  });
+
+  /* =======================
+       Helper Functions
+  ======================= */
+
+  function displayVideos(videos) {
+    videoList.innerHTML = '';
+    if (!videos.length) {
+      videoList.innerHTML = '<li class="text-muted small">No videos match your filter.</li>';
+      autoDownloadGroup.classList.add('d-none');
+      downloadButton.disabled = true;
+      footer.classList.add('d-none');
+      return;
+    }
+
+    displayedVideos = videos;
+
+    // Efficient rendering using DocumentFragment
+    const frag = document.createDocumentFragment();
+    videos.forEach(video => {
+      const li = document.createElement('li');
+      li.className = 'd-flex align-items-center gap-2 mb-1';
+      const decodedName = safeDecode(video.fileName || new URL(video.url).pathname.split('/').pop() || 'download');
+      li.innerHTML = `
+        <input type="checkbox" data-id="${video.id}" id="${video.id}">
+        <label for="${video.id}" class="flex-grow-1 mb-0">
+          <span class="filename">${escapeHtml(decodedName)}</span>
+          ${video.extension ? `<span class="extension">.${escapeHtml(video.extension)}</span>` : ''}
+          <span class="file-size text-muted small" data-id="${video.id}">loading...</span>
+        </label>
+      `;
+      frag.appendChild(li);
+      // async file size fetch
+      fetchSize(video).then(size => {
+        const sizeEl = videoList.querySelector(`.file-size[data-id="${video.id}"]`);
+        if (sizeEl) sizeEl.textContent = formatBytes(size);
+      });
     });
 
-    displayVideos(filtered);
-    selectAllCheckbox.checked = false;
+    videoList.appendChild(frag);
+    updateSelectAllCheckbox();
+    updateDownloadButton();
   }
 
   function populateExtensionFilter(extensions) {
-    if (!extensionFilter) return;
     extensionFilter.innerHTML = '<option value="all">All</option>';
+    const wrapper = extensionFilter.parentElement;
 
-    const group = extensionFilter.closest('.filter-group');
-    if (!group) return;
-
-    if (extensions.length <= 1) {
-      group.classList.add('d-none');
-      return;
-    }
-
-    extensions.forEach(ext => {
-      const option = document.createElement('option');
-      option.value = ext;
-      option.textContent = `.${ext}`;
-      extensionFilter.appendChild(option);
-    });
-
-    group.classList.remove('d-none');
-  }
-
-  // ======== DISPLAY VIDEOS ========
-  function displayVideos(videos) {
-    if (!videoList) return;
-    videoList.innerHTML = '';
-    displayedVideos = videos;
-
-    if (!videos.length) {
-      const li = document.createElement('li');
-      li.className = 'list-group-item text-center text-muted small';
-      li.textContent = 'No videos match your filter criteria.';
-      videoList.appendChild(li);
-      hide(autoDownloadGroup);
-      downloadButton.disabled = true;
-      hide(footer);
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    videos.forEach(video => {
-      const li = document.createElement('li');
-      li.className = 'list-group-item d-flex align-items-center gap-2';
-
-      const decodedName = safeDecodeName(video.fileName || (new URL(video.url).pathname.split('/').pop() || 'download'));
-      const extBadge = video.extension ? `<span class="extension">.${escapeHtml(video.extension)}</span>` : '';
-
-      li.innerHTML = `
-        <input type="checkbox" data-id="${video.id}" id="${video.id}">
-        <label for="${video.id}" class="flex-grow-1 d-flex align-items-center gap-2">
-          <span class="filename">${escapeHtml(decodedName)}</span>
-          ${extBadge}
-          <span class="file-size" data-id="${video.id}">loading...</span>
-        </label>
-      `;
-
-      fragment.appendChild(li);
-
-      // async size fetch
-      fetchSizeForVideo(video).then(size => {
-        const sizeSpan = li.querySelector(`.file-size[data-id="${video.id}"]`);
-        if (sizeSpan) sizeSpan.textContent = formatBytes(size);
+    if (extensions.length > 1) {
+      extensions.forEach(ext => {
+        const option = document.createElement('option');
+        option.value = ext;
+        option.textContent = `.${ext}`;
+        extensionFilter.appendChild(option);
       });
-    });
-    videoList.appendChild(fragment);
-
-    updateSelectAllCheckbox();
-    updateDownloadButtonState();
+      wrapper.classList.remove('d-none');
+    } else {
+      wrapper.classList.add('d-none');
+    }
   }
 
-  // ======== SELECT STATE ========
-  videoList.addEventListener('change', e => {
-    if (e.target.type === 'checkbox') {
-      updateSelectAllCheckbox();
-      updateDownloadButtonState();
-    }
-  });
+  function applyFilters() {
+    const fQuery = filenameFilter.value.toLowerCase();
+    const eQuery = extensionFilter.value;
+
+    displayVideos(allVideos.filter(v => 
+      v.fileName.toLowerCase().includes(fQuery) &&
+      (eQuery === 'all' || v.extension === eQuery)
+    ));
+  }
 
   function updateSelectAllCheckbox() {
-    if (!selectAllCheckbox) return;
-    const all = displayedVideos.map(v => document.getElementById(v.id)).filter(Boolean);
-    const checked = all.filter(cb => cb.checked);
+    const all = videoList.querySelectorAll('input[type="checkbox"]');
+    const checked = videoList.querySelectorAll('input[type="checkbox"]:checked');
+    selectAllCheckbox.checked = all.length && all.length === checked.length;
     selectAllCheckbox.disabled = !all.length;
-    selectAllCheckbox.checked = all.length > 0 && checked.length === all.length;
   }
 
-  function updateDownloadButtonState() {
-    if (!downloadButton) return;
-    const hasSelection = displayedVideos.some(v => document.getElementById(v.id)?.checked);
-    downloadButton.disabled = !hasSelection;
+  function updateDownloadButton() {
+    downloadButton.disabled = !videoList.querySelector('input[type="checkbox"]:checked');
   }
 
-  // ======== DOWNLOAD ========
-  downloadButton?.addEventListener('click', () => {
-    const selected = displayedVideos.filter(v => document.getElementById(v.id)?.checked)
-      .map(v => ({ url: v.url, fileName: v.fileName }));
-
-    if (!selected.length) return displayError('Please select at least one video to download.');
-
-    const saveAs = !autoDownloadCheckbox?.checked;
-    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selected, saveAs });
-  });
-
-  // ======== FETCH VIDEO SIZE ========
-  async function fetchSizeForVideo(video) {
-    try {
-      const headResp = await fetch(video.url, { method: 'HEAD' });
-      if (headResp.ok) {
-        const cl = headResp.headers.get('content-length');
-        if (cl) return parseInt(cl, 10);
-        const cr = headResp.headers.get('content-range');
-        if (cr) return parseInt(cr.split('/')[1] || '0', 10);
-      }
-
-      const rangeResp = await fetch(video.url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
-      if (rangeResp.ok || rangeResp.status === 206) {
-        const cr2 = rangeResp.headers.get('content-range');
-        if (cr2) return parseInt(cr2.split('/')[1] || '0', 10);
-        const cl2 = rangeResp.headers.get('content-length');
-        if (cl2) return parseInt(cl2, 10);
-      }
-    } catch {}
-    return null;
+  function getUniqueExtensions(videos) {
+    return [...new Set(videos.filter(v => v.extension).map(v => v.extension))].sort();
   }
 
-  // ======== ERROR & LOADING ========
   function showLoading() {
-    show(loadingIndicator);
-    hide(errorMessage);
-    hide(filtersDiv);
-    hide(videoListContainer);
-    hide(footer);
+    loadingIndicator.classList.remove('d-none');
+    errorMessage.classList.add('d-none');
+    filtersDiv.classList.add('d-none');
+    videoListContainer.classList.add('d-none');
+    downloadButton.classList.add('d-none');
+    footer.classList.add('d-none');
   }
 
-  function hideLoading() { hide(loadingIndicator); }
+  function hideLoading() { loadingIndicator.classList.add('d-none'); }
 
-  function displayError(msg) {
-    if (!errorMessage) return;
+  function showError(msg) {
     errorMessage.textContent = msg;
-    show(errorMessage);
+    errorMessage.classList.remove('d-none');
   }
 
   function clearResults() {
     allVideos = [];
     displayedVideos = [];
-    if (videoList) videoList.innerHTML = '';
-
-    hide(errorMessage);
-    hide(filtersDiv);
-    hide(videoListContainer);
-    hide(autoDownloadGroup);
-    hide(footer);
-
-    if (downloadButton) downloadButton.disabled = true;
-    if (selectAllCheckbox) selectAllCheckbox.checked = false;
-    if (filenameFilter) filenameFilter.value = '';
-    if (extensionFilter) extensionFilter.value = 'all';
+    videoList.innerHTML = '';
+    errorMessage.classList.add('d-none');
+    filtersDiv.classList.add('d-none');
+    videoListContainer.classList.add('d-none');
+    downloadButton.classList.add('d-none');
+    downloadButton.disabled = true;
+    autoDownloadGroup.classList.add('d-none');
+    footer.classList.add('d-none');
+    selectAllCheckbox.checked = false;
+    filenameFilter.value = '';
+    extensionFilter.value = 'all';
   }
+
+  function safeDecode(name) {
+    if (!name) return '';
+    try { return decodeURIComponent(name.replace(/\+/g, ' ')); }
+    catch { return name.replace(/\+/g, ' '); }
+  }
+
+  function escapeHtml(str) {
+    return str ? String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]) : '';
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return 'Unknown';
+    const units = ['B','KB','MB','GB','TB']; let u=0, val=bytes;
+    while(val>=1024 && u<units.length-1){ val/=1024; u++; }
+    return (u===0 ? val : val.toFixed(1).replace('.0','')) + ' ' + units[u];
+  }
+
+  async function fetchSize(video){
+    try {
+      const head = await fetch(video.url,{method:'HEAD'});
+      if(head.ok){ 
+        const cl = head.headers.get('content-length'); 
+        if(cl) return parseInt(cl,10);
+      }
+    } catch{}
+    return null;
+  }
+
 });
