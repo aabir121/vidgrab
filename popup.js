@@ -122,16 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
     videos.forEach(video => {
       const decodedName = safeDecodeName(video.fileName || (new URL(video.url).pathname.split('/').pop() || 'download'));
       const li = document.createElement('li');
+      const extBadge = video.extension ? `<span class="extension">.${escapeHtml(video.extension)}</span>` : '';
       li.innerHTML = `
         <input type="checkbox" data-id="${video.id}" data-url="${video.url}" id="${video.id}">
-        <label for="${video.id}"><span class="filename">${escapeHtml(decodedName)}</span> <span class="extension">(.${video.extension || ''})</span> <span class="file-size" data-id="${video.id}">(loading...)</span></label>
+        <label for="${video.id}"><span class="filename">${escapeHtml(decodedName)}</span> ${extBadge} <span class="file-size" data-id="${video.id}">loading...</span></label>
       `;
       videoList.appendChild(li);
 
       // Kick off size fetch (async). If not available, will show 'Unknown'.
       fetchSizeForVideo(video).then(size => {
         const sizeSpan = videoList.querySelector(`.file-size[data-id="${video.id}"]`);
-        if (sizeSpan) sizeSpan.textContent = `(${formatBytes(size)})`;
+        if (sizeSpan) sizeSpan.textContent = formatBytes(size);
       });
     });
     updateSelectAllCheckbox();
