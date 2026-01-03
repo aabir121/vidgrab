@@ -120,13 +120,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     displayedVideos = videos;
     videos.forEach(video => {
+      const decodedName = safeDecodeName(video.fileName || (new URL(video.url).pathname.split('/').pop() || 'download'));
       const li = document.createElement('li');
       li.innerHTML = `
         <input type="checkbox" data-id="${video.id}" data-url="${video.url}" id="${video.id}">
-        <label for="${video.id}">${video.fileName} (.${video.extension})</label>
-        <span class="source-url">${video.url}</span>
+        <label for="${video.id}"><span class="filename">${escapeHtml(decodedName)}</span> <span class="extension">(.${video.extension || ''})</span> <span class="file-size" data-id="${video.id}">(loading...)</span></label>
       `;
       videoList.appendChild(li);
+
+      // Kick off size fetch (async). If not available, will show 'Unknown'.
+      fetchSizeForVideo(video).then(size => {
+        const sizeSpan = videoList.querySelector(`.file-size[data-id="${video.id}"]`);
+        if (sizeSpan) sizeSpan.textContent = `(${formatBytes(size)})`;
+      });
     });
     updateSelectAllCheckbox();
     updateDownloadButtonState();
@@ -160,6 +166,69 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateDownloadButtonState() {
     const hasSelection = videoList.querySelectorAll('input[type="checkbox"]:checked').length > 0;
     downloadButton.disabled = !hasSelection;
+  }
+
+  // Helpers: decode filename, format sizes, and fetch size via HEAD/Range
+  function safeDecodeName(name) {
+    if (!name) return '';
+    try {
+      // Replace + with space (sometimes used) then decode percent-escapes
+      return decodeURIComponent(name.replace(/\+/g, ' '));
+    } catch (e) {
+      return name.replace(/\+/g, ' ');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'Unknown';
+    if (bytes === 0) return '0 B';
+    const thresh = 1024;
+    const units = ['B','KB','MB','GB','TB'];
+    let u = 0;
+    let value = bytes;
+    while (value >= thresh && u < units.length - 1) {
+      value /= thresh;
+      u++;
+    }
+    return (u === 0 ? value : value.toFixed(1).replace('.0', '')) + ' ' + units[u];
+  }
+
+  async function fetchSizeForVideo(video) {
+    try {
+      // First try HEAD
+      const headResp = await fetch(video.url, { method: 'HEAD' });
+      if (headResp && headResp.ok) {
+        const cl = headResp.headers.get('content-length');
+        if (cl) return parseInt(cl, 10);
+        const cr = headResp.headers.get('content-range');
+        if (cr) {
+          const parts = cr.split('/');
+          const total = parts[1] ? parseInt(parts[1], 10) : null;
+          if (total) return total;
+        }
+      }
+
+      // Fallback try range GET (should not download full file)
+      const rangeResp = await fetch(video.url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+      if (rangeResp && (rangeResp.status === 206 || rangeResp.ok)) {
+        const cr2 = rangeResp.headers.get('content-range');
+        if (cr2) {
+          const parts = cr2.split('/');
+          const total = parts[1] ? parseInt(parts[1], 10) : null;
+          if (total) return total;
+        }
+        const cl2 = rangeResp.headers.get('content-length');
+        if (cl2) return parseInt(cl2, 10);
+      }
+    } catch (e) {
+      // Ignore failures (CORS or network), we'll show Unknown
+    }
+    return null;
   }
 
   // Event listener for individual video checkboxes
