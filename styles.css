@@ -1,285 +1,153 @@
-/* Modernized layout and badges, sticky footer, single scrollbar */
-body {
-  font-family: 'Inter', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  width: 420px;
-  padding: 20px;
+/* =========================================================
+   Base popup setup
+   ========================================================= */
+
+html, body {
+  width: 560px;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(180deg, #f6fbff 0%, #f4f7fb 100%);
   color: #1f2933;
-  margin: 0;
-  overflow: visible; /* allow popup to size to content */
-  max-height: 100vh;  
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: 0.15px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  /* no fixed height so popup sizes to content before scanning */
-  max-height: 93vh;
+body {
+  padding: 0;
+  overflow: visible;
 }
 
-h1 {
-  font-size: 1.15rem;
-  color: #0f1724;
-  margin: 0;
-  text-align: center;
-  font-weight: 600;
-  letter-spacing: -0.2px; /* slightly tightened */
-  line-height: 1.05;
+/* =========================================================
+   Card polish (Bootstrap extension)
+   ========================================================= */
+
+.card {
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-h1 i {
-  margin-right: 8px;
-  color: #2563eb;
+.card-body {
+  padding: 16px;
 }
 
-.tagline {
-  font-size: 0.76rem;
-  color: #475569;
-  text-align: center;
-  font-weight: 500;
-  letter-spacing: -0.1px;
-}
-
-.input-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.input-group label {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.input-group input[type="text"] {
-  flex-grow: 1;
-  padding: 8px 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95em;
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(16,24,40,0.03);
-}
-
-button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 10px;
-  background-color: #0ea5a4; /* teal */
-  cursor: pointer;
-  font-size: 0.95em;
-  transition: transform 0.08s ease, background-color 0.15s ease;
-  box-shadow: 0 2px 6px rgba(16,24,40,0.08);
-  font-weight: 600;
-  letter-spacing: 0.22px;
-}
-
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background-color: #059e9d;
-}
-
-button:disabled {
-  background-color: #d1d5db;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
+/* =========================================================
+   Loading & error states
+   ========================================================= */
 
 #loading-indicator {
-  text-align: center;
-  color: #475569;
-  font-style: italic;
+  font-size: 0.9rem;
 }
 
-.hidden {
-  display: none !important;
+#error-message {
+  font-size: 0.85rem;
+  margin-bottom: 12px;
 }
 
-.error {
-  color: #ef4444;
-  font-weight: 700;
-  text-align: center;
-}
+/* =========================================================
+   Filters
+   ========================================================= */
 
 #filters {
-  display: none; /* hidden by default */
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  margin-bottom: 12px;
 }
 
-#filters:not(.hidden) {
-  display: flex;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-group label {
-  white-space: nowrap;
-  font-size: 0.9em;
-}
-
-.filter-group input[type="text"],
-.filter-group select {
-  flex-grow: 1;
-  padding: 8px;
-  border: 1px solid #e6eef6;
-  border-radius: 8px;
-  font-size: 0.9em;
-  background: #ffffff;
-}
+/* =========================================================
+   Video list container
+   ========================================================= */
 
 #video-list-container {
-  padding: 0 10px 6px 10px;
-  border-radius: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 4px rgba(16,24,40,0.04);
-  flex: 1 1 auto; /* take remaining space */
-  min-height: 0; /* do not leave empty space when hidden */
-  overflow-y: auto; /* only this scrolls */
-  display: none; /* hidden by default to avoid empty box on load; JS will remove when needed */
-}
-
-#video-list-container:not(.hidden) {
-  display: block; /* show when not hidden */
-}
-
-.select-all-group {
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  position: sticky;
-  top: 0px; /* stays visible inside the scrolling container */
-  z-index: 6;
-  background: #ffffff; /* solid white to fully mask content behind when scrolling */
-  padding: 6px 6px; /* reduced horizontal padding so it sits closer to list edges */
-  margin: 0 0 8px 0; /* placed flush to container start */
-  border-bottom: 1px solid rgba(15,23,42,0.04);
-  border-radius: 8px;
-  box-shadow: 0 1px 0 rgba(15,23,42,0.02);
+  margin-top: 4px;
 }
 
 #video-list {
-  list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
+/* Scroll area already set inline in HTML */
+
+/* =========================================================
+   Select all (sticky header inside list)
+   ========================================================= */
+
+.select-all-group {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #ffffff;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+/* =========================================================
+   Video list items
+   ========================================================= */
+
 #video-list li {
+  border: none;
+  padding: 10px 8px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(10,20,30,0.01), rgba(10,20,30,0));
-  border-bottom: 1px solid rgba(15,23,42,0.03);
+  gap: 10px;
 }
 
 #video-list li:hover {
-  background-color: rgba(14,165,164,0.04);
-}
-
-#video-list li + li {
-  margin-top: 8px;
-}
-
-#video-list li input[type="checkbox"] {
-  margin-right: 8px;
+  background-color: rgba(14, 165, 164, 0.05);
 }
 
 #video-list li label {
-  flex-grow: 1;
-  font-size: 0.95em;
-  color: #0f1724;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
+/* Filename emphasis */
 .filename {
   font-weight: 600;
-  letter-spacing: -0.05px;
   color: #0b1220;
 }
 
-/* Badges */
-.extension, .file-size {
-  display: inline-block;
-  font-size: 0.75em;
-  padding: 6px 10px;
+/* =========================================================
+   Badges
+   ========================================================= */
+
+.extension,
+.file-size {
+  font-size: 0.7rem;
+  padding: 4px 8px;
   border-radius: 999px;
-  color: white;
   font-weight: 600;
-  letter-spacing: -0.04px;
-  text-align: center;
+  white-space: nowrap;
 }
 
 .extension {
-  background: linear-gradient(90deg,#6366f1,#7c3aed); /* indigo */
+  background: linear-gradient(90deg, #6366f1, #7c3aed);
 }
 
 .file-size {
-  background: linear-gradient(90deg,#06b6d4,#0ea5a4); /* teal */
+  background: linear-gradient(90deg, #06b6d4, #0ea5a4);
 }
+
+/* =========================================================
+   Footer
+   ========================================================= */
 
 .footer {
-  display: none; /* hidden by default to avoid extra space */
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 0 4px 0;
-  flex-shrink: 0;
-  border-top: 1px solid rgba(15,23,42,0.03);
-  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
-  backdrop-filter: blur(4px);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-.footer:not(.hidden) {
-  display: flex;
-}
-
-.auto-download-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.auto-download-group input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
-
-/* prevent double scrollbar in small popups */
-html, body {
-  -ms-overflow-style: none;
-  scrollbar-width: thin;
-}
+/* =========================================================
+   Scrollbar (single scroll area)
+   ========================================================= */
 
 #video-list-container::-webkit-scrollbar {
   width: 8px;
 }
 
 #video-list-container::-webkit-scrollbar-thumb {
-  background-color: rgba(15,23,42,0.12);
+  background-color: rgba(15, 23, 42, 0.15);
   border-radius: 8px;
 }
-
-/* small responsive tweak */
-@media (max-width: 420px) {
-  body { width: 360px }
-}
-
