@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectAllCheckbox = document.getElementById('select-all');
   const filenameFilter = document.getElementById('filename-filter');
   const extensionFilter = document.getElementById('extension-filter');
+  const autoDownloadCheckbox = document.getElementById('auto-download');
+  const autoDownloadGroup = document.getElementById('auto-download-group');
 
   let allVideos = [];
   let displayedVideos = [];
@@ -67,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
         displayVideos(allVideos);
         filtersDiv.classList.remove('hidden');
         videoListContainer.classList.remove('hidden');
+        autoDownloadGroup.classList.remove('hidden');
         downloadButton.classList.remove('hidden');
+        downloadButton.disabled = true;
       } else {
         displayError('No downloadable video files found on this page.');
       }
@@ -82,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#video-list input[type="checkbox"]').forEach(checkbox => {
       checkbox.checked = isChecked;
     });
+    updateDownloadButtonState();
   });
 
   filenameFilter.addEventListener('input', applyFilters);
@@ -101,13 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selectedItems });
+    const saveAs = !autoDownloadCheckbox.checked; // checked = auto-download; unchecked = prompt for location
+    chrome.runtime.sendMessage({ action: 'downloadVideos', items: selectedItems, saveAs });
   });
 
   function displayVideos(videos) {
     videoList.innerHTML = '';
     if (videos.length === 0) {
       videoList.innerHTML = '<li>No videos match your filter criteria.</li>';
+      autoDownloadGroup.classList.add('hidden');
+      downloadButton.disabled = true;
       return;
     }
     displayedVideos = videos;
@@ -121,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       videoList.appendChild(li);
     });
     updateSelectAllCheckbox();
+    updateDownloadButtonState();
   }
 
   function applyFilters() {
@@ -148,10 +157,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function updateDownloadButtonState() {
+    const hasSelection = videoList.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+    downloadButton.disabled = !hasSelection;
+  }
+
   // Event listener for individual video checkboxes
   videoList.addEventListener('change', (event) => {
     if (event.target.type === 'checkbox') {
       updateSelectAllCheckbox();
+      updateDownloadButtonState();
     }
   });
 
@@ -180,6 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
     filtersDiv.classList.add('hidden');
     videoListContainer.classList.add('hidden');
     downloadButton.classList.add('hidden');
+    downloadButton.disabled = true;
+    autoDownloadGroup.classList.add('hidden');
     selectAllCheckbox.checked = false;
     filenameFilter.value = '';
     extensionFilter.value = 'all';

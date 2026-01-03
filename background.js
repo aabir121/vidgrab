@@ -1,6 +1,7 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'downloadVideos') {
     const items = message.items || [];
+    const saveAs = !!message.saveAs;
 
     if (Array.isArray(items) && items.length > 0) {
       items.forEach(item => {
@@ -20,7 +21,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.downloads.download({
           url: item.url,
           filename: downloadFilename,
-          saveAs: false // Do not prompt user for save location
+          saveAs: saveAs // prompt user if true
         }, (downloadId) => {
           if (chrome.runtime.lastError) {
             console.error('Download failed:', chrome.runtime.lastError.message, 'for URL:', item.url);
